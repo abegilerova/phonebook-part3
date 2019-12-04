@@ -1,20 +1,22 @@
 //const http = require('http')
+require('dotenv').config()
+const Person = require('./models/person')
 const express = require('express')
 const morgan = require('morgan')
-const app = express()
 const cors = require('cors')
-//function that is used to create an express application stored in the app variable:
 const bodyParser = require('body-parser')
+
+const app = express()
+
+
+//function that is used to create an express application stored in the app variable:
+
 app.use(bodyParser.json())
 app.use(cors())
 app.use(express.static('build'))
 
-
-
 morgan.token('body', function (req, res) { return JSON.stringify(req.body) });
 app.use(morgan(':method :url :status :response-time ms - :res[content-length] :body - :req[content-length]'))
-
-
 
 let persons = [
     {
@@ -49,7 +51,9 @@ app.get('/', (req, res) => {
 })
 
 app.get('/api/persons', (req, res) => {
-    res.json(persons)
+    Person.find({}).then(persons => {
+        res.json(persons);
+    })
 })
 
 let numberOfPeople = persons.length;
@@ -87,22 +91,25 @@ app.post('/api/persons', (req, res) => {
 
     if (!body.name || !body.number) {
         return res.status(400).json({
-            error: 'content'
+            error: 'content is missing'
         })
     }
 
-    const person = {
+    const person = new Person({
         name: body.name,
         number: body.number,
         id: generateId(),
-    }
-    persons = persons.concat(person)
-    res.json(person)
+    })
+    //persons = persons.concat(person)
+    //res.json(person)
 
+    person.save().then(savedPerson => {
+        res.json(savedPerson.toJSON())
+    })
 })
 
 
-const PORT = process.env.PORT || 3001
+const PORT = process.env.PORT
 app.listen(PORT, () => {
     console.log(`Server running on port ${PORT}`)
 
